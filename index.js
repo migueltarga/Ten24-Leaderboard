@@ -218,7 +218,7 @@ class Worker {
 	// }
 }
 
-var test = new Worker('migueltarga','c7b068868101dcab46507916fe45de182860b6cd')
+var test = new Worker('migueltarga','password')
 
 
 var app = require('express')()
