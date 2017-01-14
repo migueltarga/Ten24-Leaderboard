@@ -1,0 +1,18 @@
+{
+  "name": "leaderboard",
+  "version": "1.0.0",
+  "description": "Ten24 Dashboard",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Miguel Targa",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.1.4",
+    "express": "^4.14.0",
+    "mongoose": "^4.7.6",
+    "request": "^2.79.0",
+    "socket.io": "^1.7.2"
+  }
+}
