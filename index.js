@@ -25,13 +25,16 @@ const points = {
 class Worker {
 
 	constructor(username, password) {
+		console.log('Worker Created, username:', username);
 		this.username = username
 		this.token = new Buffer(username+':'+password).toString('base64')
 	}
 
 	execute() {
+		console.log('Getting Activities');
 		this.getActivities()
 		.then((activities)=>{
+			console.log('Found '+ activities.length+' activities');
 			return this.processActivities(activities)
 		}).then((msg)=>{
 			console.log(msg)
@@ -112,6 +115,7 @@ class Worker {
 	}
 
 	processActivities(activities) {
+		console.log('Processing activities');
 		return new Promise( (resolve, reject) =>{
 			async.eachSeries(activities,  (activity, callback) =>{
 				var activityPoints = 0
@@ -214,7 +218,7 @@ class Worker {
 	// }
 }
 
-var test = new Worker('migueltarga','mypassword')
+var test = new Worker('migueltarga','c7b068868101dcab46507916fe45de182860b6cd')
 
 
 var app = require('express')()
@@ -229,10 +233,13 @@ app.get('*', function (req, res) {
 
 
 function buildOutput(){
+	console.log('Generating & Sending current stats...')
 	return new Promise( (resolve, reject) =>{
+		//console.log('1 - leaderboard')
 		var output = {}
 		User.find({},'username name avatar points').sort('-points')
 		.then((leaderboard)=>{
+			//console.log('2 - Activity')
 			output.leaderboard = leaderboard
 			return Activity.find({}).populate('creator').populate('repository').sort('-createdAt').limit(5)
 		}).then((activities)=>{
@@ -243,11 +250,12 @@ function buildOutput(){
 
 			var end = new Date()
 			end.setHours(23,59,59,999)
-
+			//console.log('3 - Stats')
 			return Activity.aggregate([ 
 				{ $match: { createdAt: {$gte: start, $lt: end } } },
 				{ $group: { _id: "$type", total: {$sum: 1} } }
 			])
+			
 
 		}).then((aggregate)=>{
 			var stats = {
@@ -263,6 +271,7 @@ function buildOutput(){
 				}else if(agg._id == 'Commit'){
 					stats.commit = agg.total
 				}
+				callback();
 			},()=>{
 				output.stats = stats
 				resolve(output)
@@ -273,9 +282,11 @@ function buildOutput(){
 }
 
 io.on('connection', function (socket) {
-
+	console.log('New Dashboard Connection');	
 	buildOutput().then((data)=>{
 		socket.emit('data', data)
+	}).catch((err)=>{
+		console.log('err', err)
 	})
 
 	setInterval(function() {

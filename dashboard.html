@@ -245,6 +245,7 @@
 	  });
 	}).
 	controller('dashCtrl', function ($scope, socket) {
+		console.log('App Started!');
 	  socket.on('data', function (data) {
 	  	console.log(data);
 	    $scope.data = data;
