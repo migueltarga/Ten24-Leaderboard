@@ -16,10 +16,10 @@ const points = {
 	PR_CLOSED_REJECTED: -3,
 	COMMIT_SHORT_DESCRIPTION: -2,
 	PUSH_DIRECT_TO_DEVELOP: -1,
-  	COMMITED : 1,
-  	PR_REVIEW: 1,
-  	PR_CREATED : 2,
-  	PR_MERGED: 5
+	COMMITED : 1,
+	PR_REVIEW: 1,
+	PR_CREATED : 2,
+	PR_MERGED: 5
 }
 
 class Worker {
@@ -28,6 +28,37 @@ class Worker {
 		console.log('Worker Created, username:', username);
 		this.username = username
 		this.token = new Buffer(username+':'+password).toString('base64')
+
+		let app = require('express')()
+		let server = require('http').Server(app)
+		this.io = require('socket.io')(server)
+
+		server.listen(2000)
+
+		app.get('*', function (req, res) {
+		  res.sendFile(__dirname + '/dashboard.html')
+		})
+
+
+		this.io.on('connection', (socket) =>{
+			console.log('New Dashboard Connection');	
+			this.buildOutput().then((data)=>{
+				socket.emit('data', data)
+			}).catch((err)=>{
+				console.log('err', err)
+			})
+		})
+		setInterval(()=> {
+			this.buildOutput().then((data)=>{
+				this.io.sockets.emit('data', data);
+			})
+		},30000)
+		
+		setInterval(function() {
+			console.log("Checking Activities...")
+			test.execute()
+		}, 30000)
+
 	}
 
 	execute() {
@@ -49,12 +80,14 @@ class Worker {
 			  url: 'https://api.github.com/users/'+this.username+'/events/orgs/ten24',
 			  json: true,
 			  headers: {
-			    'Accept': 'application/vnd.github.v3+json',
-			    'Authorization': 'Basic '+this.token,
-			    'User-Agent': 'Ten24-Leaderboard'
+				'Accept': 'application/vnd.github.v3+json',
+				'Authorization': 'Basic '+this.token,
+				'User-Agent': 'Ten24-Leaderboard'
 			  }
 			}, (error, response, body)=>{
+				console.log(error, body)
 				if (!error && response.statusCode == 200) {
+					console.log(body)
 					resolve(body)
 				}else{
 					console.log(error)
@@ -64,23 +97,6 @@ class Worker {
 		})
 	}
 
-	findOrCreateRepo(id, name){
-		return new Promise( (resolve, reject) =>{
-			Repository.findOne({repository_id: id}).then((obj)=>{
-		    	if(obj){
-		    		resolve(obj)
-		    		return
-		    	}
-		    	var newRepo = new Repository({
-		    		repository_id: id,
-		    		name:name
-		    	})
-		    	newRepo.save((err)=>{
-		    		return (err) ? reject(err) : resolve(newRepo)
-		    	})
-		    })
-		})
-	}
 
 	proccessCommits(commits, repo){
 		async.eachSeries(commits, function (commit, callback) {
@@ -96,7 +112,7 @@ class Worker {
 			Activity.findOne({activity_id: commit.sha})
 			.then((obj)=>{
 				return (obj) ? Promise.reject() : Promise.resolve()
-		    }).then(()=>{
+			}).then(()=>{
 				return User.findOne({username: commit.author.name})
 			}).then((user)=>{
 				currentUser = user
@@ -123,18 +139,27 @@ class Worker {
 				var currentUser;
 				Activity.findOne({activity_id: activity.id})
 				.then((obj)=>{
+					console.log(((obj) ? 'Found' : 'Not Found!'), activity.type );
 					return (obj) ? Promise.reject() : Promise.resolve()
-			    }).then(()=>{
-			    	return Repository.findOneAndUpdate({ repository_id: activity.repo.id }, {$set: {name: activity.repo.name}}, {upsert:true, new:true})
+				}).then(()=>{
+					return Repository.findOneAndUpdate({ repository_id: activity.repo.id }, {$set: {name: activity.repo.name}}, {upsert:true, new:true})
 				}).then((repo)=>{
+					console.log('Found Repo', repo.name)
 					currentActivity.repository = repo
-					return User.findOne({user_id: activity.actor.id})
+					console.log('Find User', activity.actor);
+
+					var authorID = activity.actor.id
+					if(activity.type ==  'PullRequestEvent'){
+						authorID = activity.payload.pull_request.user.id
+					}
+					return User.findOne({user_id: authorID})
 				}).then((user)=>{
 					if(!user){
 						Promise.reject()
 						return
 					}
 					currentUser = user
+					console.log('Found USer', user.username);
 					switch(activity.type){
 						case 'PushEvent':
 							if(activity.payload.ref == 'refs/heads/develop'){
@@ -152,7 +177,6 @@ class Worker {
 							}else if(activity.payload.action == "opened" ){
 								activityPoints	= points.PR_CREATED
 							}
-
 							currentActivity.description = activity.payload.pull_request.title
 						break
 						// case 'PullRequestReviewCommentEvent':
@@ -164,17 +188,63 @@ class Worker {
 					currentActivity.creator = currentUser
 					currentActivity.points = activityPoints
 					return currentActivity.save()
-				}).then((savedActivity)=>{
+				},()=>Promise.reject()).then((savedActivity)=>{
 					currentUser.points += savedActivity.points
 					currentUser.activities.push(savedActivity)
 					return currentUser.save()
 				}).then((suc2)=>{
-			    	callback(null)
-			    }).catch(()=>{
-			    	callback(null)
-			    })
+					callback(null)
+				}).catch(()=>{
+					callback(null)
+				})
 			}, (err)=> {
 				return (err) ? reject(err) : resolve('Done!')
+			})
+		})
+	}
+
+	buildOutput(){
+		console.log('Generating & Sending current stats...')
+		return new Promise( (resolve, reject) =>{
+			console.log('1 - leaderboard')
+			var output = {}
+			User.find({},'username name avatar points').sort('-points')
+			.then((leaderboard)=>{
+				console.log('2 - Activity', leaderboard.length)
+				output.leaderboard = leaderboard
+				return Activity.find({}).populate('creator').populate('repository').sort('-createdAt').limit(5)
+			}).then((activities)=>{
+				output.activities = activities
+				var start = new Date()
+				start.setHours(0,0,0,0)
+				var end = new Date()
+				end.setHours(23,59,59,999)
+				console.log('3 - Stats', activities.length)
+				return Activity.aggregate([ 
+					{ $match: { createdAt: {$gte: start, $lt: end } } },
+					{ $group: { _id: "$type", total: {$sum: 1} } }
+				])
+			}).then((aggregate)=>{
+				console.log('4 - proccess Stats')
+				var stats = {
+					activity : 0,
+					commit : 0,
+					pullrequest: 0,
+					review: 0
+				}
+				async.each(aggregate, (agg, callback) => {
+					stats.activity += agg.total
+					if(agg._id == 'PullRequestEvent'){
+						stats.pullrequest = agg.total
+					}else if(agg._id == 'Commit'){
+						stats.commit = agg.total
+					}
+					callback();
+				},()=>{
+					output.stats = stats
+					resolve(output)
+				})
+				
 			})
 		})
 	}
@@ -185,15 +255,15 @@ class Worker {
 	// 	async.each(members, (member, callback) => {
 		
 	// 		User.findOne({user_id: member.id}).then((obj)=>{
-	//     		if(!obj){
-	//     			request({
-	// 			  		url: 'https://api.github.com/users/'+member.login,
-	// 			  		json: true,
-	// 			  		headers: {
-	// 			    		'Accept': 'application/vnd.github.v3+json',
-	// 			    		'Authorization': 'Basic '+this.token,
-	// 			    		'User-Agent': 'Ten24-Leaderboard'
-	// 			  		}
+	// 			if(!obj){
+	// 				request({
+	// 					url: 'https://api.github.com/users/'+member.login,
+	// 					json: true,
+	// 					headers: {
+	// 						'Accept': 'application/vnd.github.v3+json',
+	// 						'Authorization': 'Basic '+this.token,
+	// 						'User-Agent': 'Ten24-Leaderboard'
+	// 					}
 	// 				}, (error, response, body)=>{
 	// 					console.log('Member: ', member.login)
 	// 					console.log('dont exists')
@@ -212,94 +282,13 @@ class Worker {
 	// 						console.log(error, body)
 	// 					}
 	// 				})
-	//     		}
-	//     	})
+	// 			}
+	// 		})
 	// 	})
 	// }
 }
 
 var test = new Worker('migueltarga','password')
-
-
-var app = require('express')()
-var server = require('http').Server(app)
-var io = require('socket.io')(server)
-
-server.listen(2000)
-
-app.get('*', function (req, res) {
-  res.sendFile(__dirname + '/dashboard.html')
-})
-
-
-function buildOutput(){
-	console.log('Generating & Sending current stats...')
-	return new Promise( (resolve, reject) =>{
-		//console.log('1 - leaderboard')
-		var output = {}
-		User.find({},'username name avatar points').sort('-points')
-		.then((leaderboard)=>{
-			//console.log('2 - Activity')
-			output.leaderboard = leaderboard
-			return Activity.find({}).populate('creator').populate('repository').sort('-createdAt').limit(5)
-		}).then((activities)=>{
-			output.activities = activities
-
-			var start = new Date()
-			start.setHours(0,0,0,0)
-
-			var end = new Date()
-			end.setHours(23,59,59,999)
-			//console.log('3 - Stats')
-			return Activity.aggregate([ 
-				{ $match: { createdAt: {$gte: start, $lt: end } } },
-				{ $group: { _id: "$type", total: {$sum: 1} } }
-			])
-			
-
-		}).then((aggregate)=>{
-			var stats = {
-				activity : 0,
-				commit : 0,
-				pullrequest: 0,
-				review: 0
-			}
-			async.each(aggregate, (agg, callback) => {
-				stats.activity += agg.total
-				if(agg._id == 'PullRequestEvent'){
-					stats.pullrequest = agg.total
-				}else if(agg._id == 'Commit'){
-					stats.commit = agg.total
-				}
-				callback();
-			},()=>{
-				output.stats = stats
-				resolve(output)
-			})
-			
-		})
-	})
-}
-
-io.on('connection', function (socket) {
-	console.log('New Dashboard Connection');	
-	buildOutput().then((data)=>{
-		socket.emit('data', data)
-	}).catch((err)=>{
-		console.log('err', err)
-	})
-
-	setInterval(function() {
-		buildOutput().then((data)=>{
-			socket.emit('data', data)
-		})
-	},60000)
-})
-
-setInterval(function() {
-	console.log("Checking Activities...")
-	test.execute()
-}, 30000)
 
 
 // setInterval(function() {
