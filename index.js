@@ -8,6 +8,11 @@ const User = require('./model/user')
 const Activity = require('./model/activity')
 const Repository = require('./model/Repository')
 
+
+const app = require('express')()
+const server = require('http').Server(app)
+const io = require('socket.io')(server)
+
 mongoose.connect('mongodb://localhost/leaderboard')
 mongoose.Promise = global.Promise
 
@@ -17,7 +22,7 @@ const points = {
 	COMMIT_SHORT_DESCRIPTION: -2,
 	PUSH_DIRECT_TO_DEVELOP: -1,
 	COMMITED : 1,
-	PR_REVIEW: 1,
+	PR_REVIEW_COMMENT: 1,
 	PR_CREATED : 2,
 	PR_MERGED: 5
 }
@@ -29,9 +34,6 @@ class Worker {
 		this.username = username
 		this.token = new Buffer(username+':'+password).toString('base64')
 
-		let app = require('express')()
-		let server = require('http').Server(app)
-		this.io = require('socket.io')(server)
 
 		server.listen(2000)
 
@@ -40,7 +42,7 @@ class Worker {
 		})
 
 
-		this.io.on('connection', (socket) =>{
+		io.on('connection', (socket) =>{
 			console.log('New Dashboard Connection');	
 			this.buildOutput().then((data)=>{
 				socket.emit('data', data)
@@ -50,7 +52,7 @@ class Worker {
 		})
 		setInterval(()=> {
 			this.buildOutput().then((data)=>{
-				this.io.sockets.emit('data', data);
+				io.sockets.emit('data', data);
 			})
 		},30000)
 		
@@ -179,9 +181,12 @@ class Worker {
 							}
 							currentActivity.description = activity.payload.pull_request.title
 						break
-						// case 'PullRequestReviewCommentEvent':
-						// 	activityPoints = points.PR_REVIEW
-						// break
+						case 'PullRequestReviewCommentEvent':
+							activityPoints = points.PR_REVIEW_COMMENT
+						break
+						case 'PullRequestReviewEvent':
+							activityPoints = points.PR_REVIEW_COMMENT
+						break
 					}
 
 					console.log(activity.type, activityPoints)
@@ -249,52 +254,9 @@ class Worker {
 		})
 	}
 
-//I will refactor this...
-	// syncUsers(){
-	// 	var members = require('./members.json')
-	// 	async.each(members, (member, callback) => {
-		
-	// 		User.findOne({user_id: member.id}).then((obj)=>{
-	// 			if(!obj){
-	// 				request({
-	// 					url: 'https://api.github.com/users/'+member.login,
-	// 					json: true,
-	// 					headers: {
-	// 						'Accept': 'application/vnd.github.v3+json',
-	// 						'Authorization': 'Basic '+this.token,
-	// 						'User-Agent': 'Ten24-Leaderboard'
-	// 					}
-	// 				}, (error, response, body)=>{
-	// 					console.log('Member: ', member.login)
-	// 					console.log('dont exists')
-	// 					if (!error && response.statusCode == 200) {
-	// 						console.log('Found', body.name)
-	// 						var newUser = new User({
-	// 							username: body.login,
-	// 							user_id: body.id,
-	// 							name: body.name,
-	// 							avatar: body.avatar_url,
-	// 							email: body.email,
-	// 							points: 0
-	// 						})
-	// 						newUser.save()
-	// 					}else{
-	// 						console.log(error, body)
-	// 					}
-	// 				})
-	// 			}
-	// 		})
-	// 	})
-	// }
 }
 
-var test = new Worker('migueltarga','password')
-
-
-// setInterval(function() {
-//   console.log("Checking Members...")
-//   test.syncUsers()
-// }, (12 * 60 * 60 * 1000))
+var test = new Worker('migueltarga','passowrd')
 
 
 
