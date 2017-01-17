@@ -1,6 +1,6 @@
 'use strict'
 
-const {points, repository} = require('./config.json') 
+const {points, github} = require('./config.json') 
 const mongoose = require('mongoose')
 const async = require('async')
 const request = require('request')
@@ -23,13 +23,13 @@ class Worker {
 		console.log('Worker Created, username:', options.username);
 		this.username = options.username
 		this.token = new Buffer(options.username+':'+options.password).toString('base64')
+		this.org = options.org;
 
 		server.listen(2000)
 
 		app.get('*', function (req, res) {
 		  res.sendFile(__dirname + '/dashboard.html')
 		})
-
 
 		io.on('connection', (socket) =>{
 			console.log('New Dashboard Connection');	
@@ -39,6 +39,7 @@ class Worker {
 				console.log('err', err)
 			})
 		})
+
 		setInterval(()=> {
 			this.buildOutput().then((data)=>{
 				io.sockets.emit('data', data);
@@ -68,7 +69,7 @@ class Worker {
 	getActivities() {
 		return new Promise( (resolve, reject) =>{
 			request({
-			  url: 'https://api.github.com/users/'+this.username+'/events/orgs/ten24',
+			  url: 'https://api.github.com/users/'+this.username+'/events/orgs/'+this.org,
 			  json: true,
 			  headers: {
 				'Accept': 'application/vnd.github.v3+json',
@@ -76,7 +77,6 @@ class Worker {
 				'User-Agent': 'Ten24-Leaderboard'
 			  }
 			}, (error, response, body)=>{
-				console.log(error, body)
 				if (!error && response.statusCode == 200) {
 					console.log(body)
 					resolve(body)
@@ -109,11 +109,13 @@ class Worker {
 				currentUser = user
 				commitActivity.creator = user
 				return commitActivity.save()
-			}).then((act)=>{
+			},()=>Promise.reject()).then((act)=>{
 				currentUser.activities.push(act)
 				currentUser.points += act.points
 				return currentUser.save()
 			}).then(()=>{
+				callback()
+			}).then(undefined, function(err){
 				callback()
 			}).catch(()=>{
 				callback()
@@ -187,9 +189,11 @@ class Worker {
 					currentUser.activities.push(savedActivity)
 					return currentUser.save()
 				}).then((suc2)=>{
-					callback(null)
+					callback()
+				}).then(undefined, function(err){
+					callback()
 				}).catch(()=>{
-					callback(null)
+					callback()
 				})
 			}, (err)=> {
 				return (err) ? reject(err) : resolve('Done!')
@@ -243,9 +247,46 @@ class Worker {
 		})
 	}
 
+//I will refactor this...
+	// syncUsers(){
+	// 	var members = require('./members.json')
+	// 	async.each(members, (member, callback) => {
+		
+	// 		User.findOne({user_id: member.id}).then((obj)=>{
+	// 			if(!obj){
+	// 				request({
+	// 					url: 'https://api.github.com/users/'+member.login,
+	// 					json: true,
+	// 					headers: {
+	// 						'Accept': 'application/vnd.github.v3+json',
+	// 						'Authorization': 'Basic '+this.token,
+	// 						'User-Agent': 'Ten24-Leaderboard'
+	// 					}
+	// 				}, (error, response, body)=>{
+	// 					console.log('Member: ', member.login)
+	// 					console.log('dont exists')
+	// 					if (!error && response.statusCode == 200) {
+	// 						console.log('Found', body.name)
+	// 						var newUser = new User({
+	// 							username: body.login,
+	// 							user_id: body.id,
+	// 							name: body.name,
+	// 							avatar: body.avatar_url,
+	// 							email: body.email,
+	// 							points: 0
+	// 						})
+	// 						newUser.save()
+	// 					}else{
+	// 						console.log(error, body)
+	// 					}
+	// 				})
+	// 			}
+	// 		})
+	// 	})
+	// }
 }
 
-var test = new Worker(repository)
+var test = new Worker(github)
 
 
 
