@@ -1,5 +1,6 @@
 'use strict'
 
+const {points, repository} = require('./config.json') 
 const mongoose = require('mongoose')
 const async = require('async')
 const request = require('request')
@@ -7,7 +8,6 @@ const request = require('request')
 const User = require('./model/user')
 const Activity = require('./model/activity')
 const Repository = require('./model/Repository')
-
 
 const app = require('express')()
 const server = require('http').Server(app)
@@ -17,23 +17,12 @@ mongoose.connect('mongodb://localhost/leaderboard')
 mongoose.Promise = global.Promise
 
 
-const points = {
-	PR_CLOSED_REJECTED: -3,
-	COMMIT_SHORT_DESCRIPTION: -2,
-	PUSH_DIRECT_TO_DEVELOP: -1,
-	COMMITED : 1,
-	PR_REVIEW_COMMENT: 1,
-	PR_CREATED : 2,
-	PR_MERGED: 5
-}
-
 class Worker {
 
-	constructor(username, password) {
-		console.log('Worker Created, username:', username);
-		this.username = username
-		this.token = new Buffer(username+':'+password).toString('base64')
-
+	constructor(options) {
+		console.log('Worker Created, username:', options.username);
+		this.username = options.username
+		this.token = new Buffer(options.username+':'+options.password).toString('base64')
 
 		server.listen(2000)
 
@@ -256,7 +245,7 @@ class Worker {
 
 }
 
-var test = new Worker('migueltarga','passowrd')
+var test = new Worker(repository)
 
 
 

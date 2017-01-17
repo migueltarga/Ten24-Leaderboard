@@ -1,0 +1,16 @@
+{
+    "points": {
+        "PR_CLOSED_REJECTED": -3,
+        "COMMIT_SHORT_DESCRIPTION": -2,
+        "PUSH_DIRECT_TO_DEVELOP": -1,
+        "COMMITED": 1,
+        "PR_REVIEW_COMMENT": 1,
+        "PR_CREATED": 2,
+        "PR_MERGED": 5
+    },
+    "repository": {
+        "username": "migueltarga",
+        "password": "",
+        "url": "https://api.github.com/users/migueltarga/events/orgs/ten24"
+    }
+}
