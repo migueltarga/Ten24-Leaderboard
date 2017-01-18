@@ -22,7 +22,7 @@ class Worker {
 	constructor(options) {
 		console.log('Worker Created, username:', options.username);
 		this.username = options.username
-		this.token = new Buffer(options.username+':'+options.password).toString('base64')
+		this.token = new Buffer(options.username+':'+options.password).toString('base64');
 		this.org = options.org;
 
 		server.listen(2000)
@@ -55,7 +55,7 @@ class Worker {
 
 	execute() {
 		console.log('Getting Activities');
-		this.getActivities()
+		this.apiRequest('https://api.github.com/users/'+this.username+'/events/orgs/'+this.org)
 		.then((activities)=>{
 			console.log('Found '+ activities.length+' activities');
 			return this.processActivities(activities)
@@ -65,29 +65,6 @@ class Worker {
 			console.log('Ops!', err)
 		})
 	}
-
-	getActivities() {
-		return new Promise( (resolve, reject) =>{
-			request({
-			  url: 'https://api.github.com/users/'+this.username+'/events/orgs/'+this.org,
-			  json: true,
-			  headers: {
-				'Accept': 'application/vnd.github.v3+json',
-				'Authorization': 'Basic '+this.token,
-				'User-Agent': 'Ten24-Leaderboard'
-			  }
-			}, (error, response, body)=>{
-				if (!error && response.statusCode == 200) {
-					console.log(body)
-					resolve(body)
-				}else{
-					console.log(error)
-					reject()
-				}
-			})
-		})
-	}
-
 
 	proccessCommits(commits, repo){
 		async.eachSeries(commits, function (commit, callback) {
@@ -132,14 +109,14 @@ class Worker {
 				var currentUser;
 				Activity.findOne({activity_id: activity.id})
 				.then((obj)=>{
-					console.log(((obj) ? 'Found' : 'Not Found!'), activity.type );
+					console.log(((obj) ? 'Activity Already Exists!' : 'New Activity: '), activity.type );
 					return (obj) ? Promise.reject() : Promise.resolve()
 				}).then(()=>{
 					return Repository.findOneAndUpdate({ repository_id: activity.repo.id }, {$set: {name: activity.repo.name}}, {upsert:true, new:true})
 				}).then((repo)=>{
-					console.log('Found Repo', repo.name)
+					console.log('Found Repository', repo.name)
 					currentActivity.repository = repo
-					console.log('Find User', activity.actor);
+					console.log('User Lookup', activity.actor.name);
 
 					var authorID = activity.actor.id
 					if(activity.type ==  'PullRequestEvent'){
@@ -152,7 +129,7 @@ class Worker {
 						return
 					}
 					currentUser = user
-					console.log('Found USer', user.username);
+					console.log('Found User: ', user.username);
 					switch(activity.type){
 						case 'PushEvent':
 							if(activity.payload.ref == 'refs/heads/develop'){
@@ -204,26 +181,25 @@ class Worker {
 	buildOutput(){
 		console.log('Generating & Sending current stats...')
 		return new Promise( (resolve, reject) =>{
-			console.log('1 - leaderboard')
+			console.log('1 - Getting Leaderboard...')
 			var output = {}
 			User.find({},'username name avatar points').sort('-points')
 			.then((leaderboard)=>{
-				console.log('2 - Activity', leaderboard.length)
 				output.leaderboard = leaderboard
 				return Activity.find({}).populate('creator').populate('repository').sort('-createdAt').limit(5)
 			}).then((activities)=>{
+				console.log('2 - Getting Activity...')
 				output.activities = activities
 				var start = new Date()
 				start.setHours(0,0,0,0)
 				var end = new Date()
 				end.setHours(23,59,59,999)
-				console.log('3 - Stats', activities.length)
 				return Activity.aggregate([ 
 					{ $match: { createdAt: {$gte: start, $lt: end } } },
 					{ $group: { _id: "$type", total: {$sum: 1} } }
 				])
 			}).then((aggregate)=>{
-				console.log('4 - proccess Stats')
+				console.log('3 - Getting Stats...')
 				var stats = {
 					activity : 0,
 					commit : 0,
@@ -239,6 +215,7 @@ class Worker {
 					}
 					callback();
 				},()=>{
+					console.log('4 - Done!')
 					output.stats = stats
 					resolve(output)
 				})
@@ -247,43 +224,56 @@ class Worker {
 		})
 	}
 
-//I will refactor this...
-	// syncUsers(){
-	// 	var members = require('./members.json')
-	// 	async.each(members, (member, callback) => {
-		
-	// 		User.findOne({user_id: member.id}).then((obj)=>{
-	// 			if(!obj){
-	// 				request({
-	// 					url: 'https://api.github.com/users/'+member.login,
-	// 					json: true,
-	// 					headers: {
-	// 						'Accept': 'application/vnd.github.v3+json',
-	// 						'Authorization': 'Basic '+this.token,
-	// 						'User-Agent': 'Ten24-Leaderboard'
-	// 					}
-	// 				}, (error, response, body)=>{
-	// 					console.log('Member: ', member.login)
-	// 					console.log('dont exists')
-	// 					if (!error && response.statusCode == 200) {
-	// 						console.log('Found', body.name)
-	// 						var newUser = new User({
-	// 							username: body.login,
-	// 							user_id: body.id,
-	// 							name: body.name,
-	// 							avatar: body.avatar_url,
-	// 							email: body.email,
-	// 							points: 0
-	// 						})
-	// 						newUser.save()
-	// 					}else{
-	// 						console.log(error, body)
-	// 					}
-	// 				})
-	// 			}
-	// 		})
-	// 	})
-	// }
+	apiRequest(url){
+		return new Promise( (resolve, reject) =>{
+			request({
+				url: url,
+				json: true,
+				headers: {
+					'Accept': 'application/vnd.github.v3+json',
+					'Authorization': 'Basic ' + this.token,
+					'User-Agent': 'Ten24-Leaderboard'
+				}
+			}, (error, response, body)=>{
+				if (!error && response.statusCode == 200) {
+					resolve(body)
+				}else{
+					reject()
+				}
+			})
+		});
+	}
+
+	syncUsers(){
+		this.apiRequest('https://api.github.com/orgs/'+this.org+'/members')
+		.then((members)=>{
+			async.each(members, (member, callback) => {
+				console.log('Member: ', member.login)
+				User.findOne({user_id: member.id})
+				.then((obj)=>{
+					console.log(((obj) ? 'Member Already Exists!' : 'New Member!'));
+					return (obj) ? Promise.reject() : Promise.resolve()
+				}).then(()=>{
+					return this.apiRequest('https://api.github.com/users/'+member.login)
+				}).then((user)=>{
+					console.log('Details Found', user.name)
+					var newUser = new User({
+						username: user.login,
+						user_id: user.id,
+						name: user.name,
+						avatar: user.avatar_url,
+						email: user.email,
+						points: 0
+					})
+					return newUser.save()
+				}).then(()=>{
+					callback()
+				}).catch(()=>{
+					callback()
+				})
+			})
+		})
+	}
 }
 
 var test = new Worker(github)
