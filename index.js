@@ -104,7 +104,6 @@ class Worker {
 		console.log('Processing activities');
 		return new Promise( (resolve, reject) =>{
 			async.eachSeries(activities,  (activity, callback) =>{
-				var activityPoints = 0
 				var currentActivity = new Activity({ activity_id : activity.id, type: activity.type })
 				var currentUser;
 				Activity.findOne({activity_id: activity.id})
@@ -130,36 +129,9 @@ class Worker {
 					}
 					currentUser = user
 					console.log('Found User: ', user.username);
-					switch(activity.type){
-						case 'PushEvent':
-							if(activity.payload.ref == 'refs/heads/develop'){
-								activityPoints	= points.PUSH_DIRECT_TO_DEVELOP
-							}
-							if(activity.payload.commits && activity.payload.commits.length){
-								this.proccessCommits(activity.payload.commits, currentActivity.repository)
-							}
-						break
-						case 'PullRequestEvent':
-							if(activity.payload.action == "closed" && activity.payload.pull_request.merged == true){
-								activityPoints	= points.PR_MERGED
-							}else if(activity.payload.action == "closed" && activity.payload.pull_request.merged == false){
-								activityPoints	= points.PR_CLOSED_REJECTED
-							}else if(activity.payload.action == "opened" ){
-								activityPoints	= points.PR_CREATED
-							}
-							currentActivity.description = activity.payload.pull_request.title
-						break
-						case 'PullRequestReviewCommentEvent':
-							activityPoints = points.PR_REVIEW_COMMENT
-						break
-						case 'PullRequestReviewEvent':
-							activityPoints = points.PR_REVIEW_COMMENT
-						break
-					}
-
-					console.log(activity.type, activityPoints)
 					currentActivity.creator = currentUser
-					currentActivity.points = activityPoints
+					currentActivity.points = this.activityPoints(activity)
+					console.log(currentActivity.type, currentActivity.points)
 					return currentActivity.save()
 				},()=>Promise.reject()).then((savedActivity)=>{
 					currentUser.points += savedActivity.points
@@ -176,6 +148,37 @@ class Worker {
 				return (err) ? reject(err) : resolve('Done!')
 			})
 		})
+	}
+
+	activityPoints () {
+		var activityPoints = 0
+		switch(activity.type){
+			case 'PushEvent':
+				if(activity.payload.ref == 'refs/heads/develop'){
+					activityPoints	= points.PUSH_DIRECT_TO_DEVELOP
+				}
+				if(activity.payload.commits && activity.payload.commits.length){
+					this.proccessCommits(activity.payload.commits, currentActivity.repository)
+				}
+			break
+			case 'PullRequestEvent':
+				if(activity.payload.action == "closed" && activity.payload.pull_request.merged == true){
+					activityPoints	= points.PR_MERGED
+				}else if(activity.payload.action == "closed" && activity.payload.pull_request.merged == false){
+					activityPoints	= points.PR_CLOSED_REJECTED
+				}else if(activity.payload.action == "opened" ){
+					activityPoints	= points.PR_CREATED
+				}
+				currentActivity.description = activity.payload.pull_request.title
+			break
+			case 'PullRequestReviewCommentEvent':
+				activityPoints = points.PR_REVIEW_COMMENT
+			break
+			case 'PullRequestReviewEvent':
+				activityPoints = points.PR_REVIEW_COMMENT
+			break
+		}
+		return activityPoints
 	}
 
 	buildOutput(){
