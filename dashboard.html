@@ -23,9 +23,9 @@
 	  position: relative;
 	  width: 22%;
 	}
-	.card .glyphicon {
+	.card .fa {
 	  color: white;
-	  font-size: 28px;
+	  font-size: 42px;
 	  opacity: 0.3;
 	  position: absolute;
 	  right: 13px;
@@ -33,8 +33,8 @@
 	}
 	.card .stat {
 	  border-top: 1px solid rgba(255, 255, 255, 0.3);
-	  font-size: 8px;
-	  margin-top: 25px;
+	  font-size: 14px;
+	  margin-top: 5px;
 	  padding: 10px 10px 0;
 	  text-transform: uppercase;
 	}
@@ -45,7 +45,7 @@
 	  text-transform: uppercase;
 	}
 	.card .value {
-	  font-size: 26px;
+	  font-size: 40px;
 	  font-weight: lighter;
 	  padding: 0 10px;
 	}
@@ -81,7 +81,7 @@
 	.projects-header .count {
 	  color: #738297;
 	}
-	.projects-header .glyphicon {
+	.projects-header .fa {
 	  cursor: pointer;
 	  float: right;
 	  font-size: 16px;
@@ -104,11 +104,13 @@
 	  vertical-align: middle;
 	}
 	.projects-table td p {
-	  font-size: 12px;
+	  font-size: 16px;
+	  font-weight: 100;
 	}
 	.projects-table td p:last-of-type {
 	  color: #738297;
-	  font-size: 11px;
+	  font-size: 15px;
+	  font-weight: 400;
 	}
 	.projects-table tr:not(:last-of-type) {
 	  border-bottom: 1px solid #313D4F;
@@ -230,6 +232,7 @@
 	    justify-content: space-between;
 	}
 </style>
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.js"></script>
@@ -256,31 +259,35 @@
 <body ng-app="myApp" ng-controller="dashCtrl">
 	<div class="card-list" id="container">
 	  <div class="card blue">
-	    <div class="title">Team Activity</div><span class="glyphicon glyphicon-upload"></span>
+	    <div class="title">Team Activity</div>
+	    <span class="fa" data-ng-class="data.stats.activity > data.last_stats.activity ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"></span>
 	    <div class="value" data-ng-bind="data.stats.activity">0</div>
-	    <div class="stat"><b>13</b>% increase</div>
+	    <div class="stat"><b data-ng-bind="data.last_stats.activity"></b> yesterday</div>
 	  </div>
 	  <div class="card green">
-	    <div class="title">Commits</div><span class="glyphicon glyphicon-upload"></span>
+	    <div class="title">Commits</div>
+	    <span class="fa" data-ng-class="data.stats.commit > data.last_stats.commit ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"></span>
 	    <div class="value" data-ng-bind="data.stats.commit">0</div>
-	    <div class="stat"><b>4</b>% increase</div>
+	    <div class="stat"><b data-ng-bind="data.last_stats.commit"></b> yesterday</div>
 	  </div>
 	  <div class="card orange">
-	    <div class="title">Pull Requests</div><span class="glyphicon glyphicon-download"></span>
+	    <div class="title">Pull Requests</div>
+	    <span class="fa" data-ng-class="data.stats.pullrequest > data.last_stats.pullrequest ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"></span>
 	    <div class="value" data-ng-bind="data.stats.pullrequest">0</div>
-	    <div class="stat"><b>13</b>% decrease</div>
+	    <div class="stat"><b data-ng-bind="data.last_stats.pullrequest"></b> yesterday</div>
 	  </div>
 	  <div class="card red">
-	    <div class="title">Reviews</div><span class="glyphicon glyphicon-download"></span>
+	    <div class="title">Reviews</div>
+	    <span class="fa" data-ng-class="data.stats.review > data.last_stats.review ? 'fa-chevron-circle-up' : 'fa-chevron-circle-down'"></span>
 	    <div class="value" data-ng-bind="data.stats.review">0</div>
-	    <div class="stat"><b>13</b>% decrease</div>
+	    <div class="stat"><b data-ng-bind="data.last_stats.review"></b> yesterday</div>
 	  </div>
 	</div>
 	<div class="projects">
 	  <div class="projects-inner">
 	    <header class="projects-header">
 	      <div class="title">Leaderboard</div>
-	      <div class="count">| {{data.leaderboard.length}} Members</div><span class="glyphicon glyphicon-download-alt"></span>
+	      <div class="count">| {{data.leaderboard.length}} Members</div>
 	    </header>
 	    <table class="projects-table">
 			<tr>
@@ -291,11 +298,18 @@
 				<th class="table-head"></th>
 			</tr>
 
-		    <tr class="danger-item" data-ng-repeat="user in data.leaderboard"  ng-if="$index % 5 == 0">
+		    <tr class="danger-item" data-ng-repeat="users in data.leaderboard"  ng-if="$index % 5 == 0">
+
 				<td class="member" ng-repeat="user in data.leaderboard.slice($index, ($index+5 > data.leaderboard.length ? data.leaderboard.length : $index+5))">
 		          <figure><img ng-src="{{user.avatar}}"/></figure>
 		          <div class="member-info">
-		            <p>{{user.username}}</p>
+		            <p>
+		            	<span data-ng-if="user.name">{{user.name}}</span>
+		            	<span data-ng-if="!user.name">{{user.username}}</span>
+		            	<i data-ng-if="$parent.$index == 0 && $index == 0" class="fa fa-trophy" style="color:yellow"></i>
+		            	<i data-ng-if="$parent.$index == 0 && $index == 1" class="fa fa-trophy" style="color:silver"></i>
+		            	<i data-ng-if="$parent.$index == 0 && $index == 2" class="fa fa-trophy" style="color:#A67D3D"></i>
+	            	</p>
 		            <p>{{user.points}} Points</p>
 		          </div>
 		        </td>
@@ -309,7 +323,7 @@
 	  <div class="projects-inner">
 	    <header class="projects-header">
 	      <div class="title">Latest Activities</div>
-	      <div class="count">| last 5</div><span class="glyphicon glyphicon-download-alt"></span>
+	      <div class="count">| last 5</div>
 	    </header>
 	    <table class="activity-table">
 	      <tr>

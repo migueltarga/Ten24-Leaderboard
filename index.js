@@ -81,7 +81,7 @@ class Worker {
 			.then((obj)=>{
 				return (obj) ? Promise.reject() : Promise.resolve()
 			}).then(()=>{
-				return User.findOne({username: commit.author.name})
+				return User.findOne({ $or : [{username: commit.author.name},{email: commit.author.email}, {name: commit.author.name}]})
 			}).then((user)=>{
 				currentUser = user
 				commitActivity.creator = user
@@ -106,6 +106,7 @@ class Worker {
 			async.eachSeries(activities,  (activity, callback) =>{
 				var currentActivity = new Activity({ activity_id : activity.id, type: activity.type })
 				var currentUser;
+
 				Activity.findOne({activity_id: activity.id})
 				.then((obj)=>{
 					console.log(((obj) ? 'Activity Already Exists!' : 'New Activity: '), activity.type );
@@ -149,7 +150,7 @@ class Worker {
 			})
 		})
 	}
-
+  
 	activityPoints () {
 		var activityPoints = 0
 		switch(activity.type){
@@ -218,11 +219,41 @@ class Worker {
 					}
 					callback();
 				},()=>{
-					console.log('4 - Done!')
 					output.stats = stats
-					resolve(output)
+					Promise.resolve()
 				})
 				
+			}).then(()=>{
+				console.log('4 - Getting Yesterdays Stats!')
+				var start = new Date()
+				start.setDate(start.getDate()-1)
+				start.setHours(0,0,0,0)
+				var end = new Date()
+				end.setDate(end.getDate()-1)
+				end.setHours(23,59,59,999)
+				return Activity.aggregate([ 
+					{ $match: { createdAt: {$gte: start, $lt: end } } },
+					{ $group: { _id: "$type", total: {$sum: 1} } }
+				])
+			}).then((aggregate)=>{
+				var stats = {
+					activity : 0,
+					commit : 0,
+					pullrequest: 0,
+					review: 0
+				}
+				async.each(aggregate, (agg, callback) => {
+					stats.activity += agg.total
+					if(agg._id == 'PullRequestEvent'){
+						stats.pullrequest = agg.total
+					}else if(agg._id == 'Commit'){
+						stats.commit = agg.total
+					}
+					callback();
+				},()=>{
+					output.last_stats = stats
+					resolve(output)
+				})
 			})
 		})
 	}
