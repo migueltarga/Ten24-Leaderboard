@@ -1,13 +1,12 @@
 'use strict'
 
-const mongoose = require('mongoose'),
-	{ Model } = mongoose,
-	factory = require('schemaFactory'),
-	{ User } = require('user'),
-	{ Repository } = require('repository');
+const mongoose 		= require('mongoose'),
+	{ Model } 		= mongoose,
+	factory 		= require('schemaFactory'),
+	{ User } 		= require('user'),
+	{ Repository } 	= require('repository');
 
 export class Activity extends Model {
-
 	static get schema () {
         return factory({
             activity_id: String,

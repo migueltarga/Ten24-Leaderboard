@@ -5,9 +5,9 @@ const mongoose = require('mongoose')
 const async = require('async')
 const request = require('request')
 
-const User = require('./model/user')
-const Activity = require('./model/activity')
-const Repository = require('./model/Repository')
+const User = require('./src/models/user')
+const Activity = require('./src/models/activity')
+const Repository = require('./src/models/Repository')
 
 const app = require('express')()
 const server = require('http').Server(app)
@@ -20,6 +20,7 @@ mongoose.Promise = global.Promise
 class Worker {
 
 	constructor(options) {
+
 		console.log('Worker Created, username:', options.username);
 		this.username = options.username
 		this.token = new Buffer(options.username+':'+options.password).toString('base64');
@@ -104,6 +105,7 @@ class Worker {
 		console.log('Processing activities');
 		return new Promise( (resolve, reject) =>{
 			async.eachSeries(activities,  (activity, callback) =>{
+
 				var activityPoints = 0
 				var currentActivity = new Activity({ activity_id : activity.id, type: activity.type })
 				var currentUser;

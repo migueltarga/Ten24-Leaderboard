@@ -1,7 +1,6 @@
-const mongoose = require('mongoose');
-const { Model, Schema } = mongoose;
+const { Schema } = require('mongoose');
 
-export default function create(config){
+export default function createSchema(config){
     return new Schema(config,{
         timestamps: true
     });

@@ -1,12 +1,11 @@
 'use strict'
 
-const mongoose = require('mongoose'),
-    { Model } = mongoose,
-    factory = require('schemaFactory'),
-	{Activity} = require('activity');
+const mongoose 		= require('mongoose'),
+    factory 		= require('schemaFactory'),
+    { Model } 		= mongoose,
+	{ Activity }	= require('activity');
 
 export class Repository extends Model {
-
     static get schema () {
         return factory({
             repository_id: { type: Number, required: true, unique: true },
