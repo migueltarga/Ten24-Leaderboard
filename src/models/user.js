@@ -1,5 +1,3 @@
-'use strict'
-
 const mongoose = require('mongoose'),
     { Model } = mongoose,
     factory = require('schemaFactory'),

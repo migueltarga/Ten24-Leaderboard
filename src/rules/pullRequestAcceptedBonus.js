@@ -1,8 +1,5 @@
-const DEVELOP_BRANCH        = 'refs/heads/develop',
-    { PULLREQUESTEVENT }    = require('event'),
-    { CLOSED }              = require('action'),
+const { PULL_REQUEST_EVENT, CLOSED }    = require('constants'),
     points = require('../../config.example.json');
-
 
 /**
  * If the activity is of type PULL_REQUEST_EVENT and payload.action is CLOSED and pull_request was merged

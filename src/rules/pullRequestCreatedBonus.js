@@ -1,5 +1,4 @@
-const { PULLREQUESTEVENT }    = require('event'),
-    { CLOSED }              = require('action'),
+const { PULL_REQUEST_EVENT, CLOSED }    = require('constants'),
     points = require('../../config.example.json');
 
 /**

@@ -1,4 +1,4 @@
-const {PULL_REQUEST_EVENT}    = require('event'),
+const {PULL_REQUEST_EVENT}    = require('constants'),
     points = require('../../config.example.json');
 
 

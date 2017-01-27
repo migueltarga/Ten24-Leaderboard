@@ -4,10 +4,11 @@
   "description": "Ten24 Dashboard",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "check-node-version --node \">= 7.2.1\" && node index.js"
   },
   "author": "Miguel Targa",
   "license": "MIT",
+  "engines" : { "node" : ">=7.2.1" },
   "dependencies": {
     "async": "^2.1.4",
     "express": "^4.14.0",
