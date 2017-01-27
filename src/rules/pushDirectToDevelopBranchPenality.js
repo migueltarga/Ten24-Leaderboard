@@ -1,6 +1,7 @@
 const DEVELOP_BRANCH = 'refs/heads/develop',
     { PUSH_EVENT } = require('constants'),
-    points = require('../../config.example.json');
+    { activity_factory } = require( './util' ),
+    { PUSH_DIRECT_TO_DEVELOP } = require('../../config.example.json');
 
 
 /**
@@ -8,15 +9,13 @@ const DEVELOP_BRANCH = 'refs/heads/develop',
  * otherwise zero
  * @param activity
  */
-export default function (activity){
+export default function ({payload:ref, type, activity_id}){
     return {
-        evaluate: activity.payload.ref === DEVELOP_BRANCH? ()=>{
-            if(activity.type === PUSH_EVENT ){
-                //maybe it is not necessary anymore
-                return points.PUSH_DIRECT_TO_DEVELOP;
-            } else {
-                return 0;
-            }
-        }: ()=> 0
+        evaluate: ref === DEVELOP_BRANCH? ()=>{
+
+            let points = type === PUSH_EVENT? PUSH_DIRECT_TO_DEVELOP: 0;
+            return activity_factory(activity_id, points);
+
+        }: ()=> activity_factory(activity_id)
     }
 }

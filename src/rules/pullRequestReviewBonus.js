@@ -1,5 +1,6 @@
 const { PULL_REQUEST_REVIEW_EVENT }    = require('constants'),
-    points = require('../../config.example.json');
+    { activity_factory } = require( './util' ),
+    { PR_REVIEW_COMMENT } = require('../../config.example.json');
 
 
 /**
@@ -7,8 +8,9 @@ const { PULL_REQUEST_REVIEW_EVENT }    = require('constants'),
  * @param activity
  * @returns {{evaluate: *}}
  */
-export default function (activity){
+export default function ({activity_id, type}){
     return {
-        evaluate: activity.type === PULL_REQUEST_REVIEW_EVENT? ()=> points.PR_REVIEW_COMMENT : ()=> 0
+        evaluate: type === PULL_REQUEST_REVIEW_EVENT? ()=> activity_factory(activity_id, PR_REVIEW_COMMENT)
+            : ()=> activity_factory(activity_id)
     }
 }

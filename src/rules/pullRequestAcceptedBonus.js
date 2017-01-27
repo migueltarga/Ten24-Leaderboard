@@ -1,23 +1,23 @@
 const { PULL_REQUEST_EVENT, CLOSED }    = require('constants'),
-    points = require('../../config.example.json');
+    { activity_factory } = require( './util' ),
+    {PR_MERGED} = require('../../config.example.json');
 
 /**
  * If the activity is of type PULL_REQUEST_EVENT and payload.action is CLOSED and pull_request was merged
  * we give points.PR_MERGED points otherwise zero
- * @param activity
- * @returns {{evaluate: (function():number)}}
+ * @param activity_id
+ * @param type
+ * @param action
+ * @param merged
  */
-export default function (activity){
+export default function ({ activity_id, type, payload:{action, pull_request: merged } }){
     return {
-        evaluate: activity.type === PULL_REQUEST_EVENT? ()=> {
+        evaluate: type === PULL_REQUEST_EVENT? ()=> {
 
-            if( activity.payload.action === CLOSED && activity.payload.pull_request.merged == true) {
-                return points.PR_MERGED
-            }
-             else {
-                return 0;
-            }
+            let points = action === CLOSED && merged == true? PR_MERGED : 0;
 
-        }: ()=> 0
+            return activity_factory(activity_id, points);
+
+        }: ()=> activity_factory(activity_id)
     }
 }
