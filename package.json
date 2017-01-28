@@ -8,10 +8,14 @@
   },
   "author": "Miguel Targa",
   "license": "MIT",
-  "engines" : { "node" : ">=7.2.1" },
+  "engines": {
+    "node": ">=7.2.1"
+  },
   "dependencies": {
     "async": "^2.1.4",
     "express": "^4.14.0",
+    "lodash.difference": "^4.5.0",
+    "lodash.uniq": "^4.5.0",
     "mongoose": "^4.7.6",
     "request": "^2.79.0",
     "socket.io": "^1.7.2"

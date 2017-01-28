@@ -127,6 +127,8 @@ class Worker {
 						authorID = activity.payload.pull_request.user.id
 					}
 					return User.findOne({user_id: authorID})
+
+
 				}).then((user)=>{
 					if(!user){
 						Promise.reject()

@@ -1,7 +1,10 @@
 const request = require('request');
 
 //TODO: create a default interface to permit others implemenations
-export default function apiRequest(resource){
+export default function githubFetch(resource, {username, password}){
+
+    const token = new Buffer(`${username}:${password}`).toString('base64');
+
     return new Promise( (resolve, reject) =>{
         request({
             url: `https://api.github.com/${ resource}`,
@@ -12,7 +15,7 @@ export default function apiRequest(resource){
                 'User-Agent': 'Ten24-Leaderboard'
             }
         }, (error, response, body)=>{
-            if (!error && response.statusCode == 200) {
+            if (!error && response.statusCode === 200) {
                 resolve(body)
             }else{
                 reject({response, error})
