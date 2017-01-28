@@ -2,6 +2,7 @@ const {require_rules} = require('./util'),
     flatten = require('lodash.flatten'),
     uniq = require('lodash.uniq'),
     difference = require('lodash.difference'),
+    {PULL_REQUEST_EVENT} = require('./rules/constants')
     Activity = require('./src/models/activity'),
     User = require('./src/models/user'),
     Repository = require('./src/models/Repository');
@@ -37,7 +38,7 @@ export default function processor(activities) {
  */
 export async function db_insert_users(activities){
     let keys = uniq(activities.map(
-            activity => (activity.type ==  'PullRequestEvent'? activity.payload.pull_request.user.id : activity.actor.id)+''
+            activity => (activity.type === PULL_REQUEST_EVENT? activity.payload.pull_request.user.id : activity.actor.id)+''
         )
     );
 
