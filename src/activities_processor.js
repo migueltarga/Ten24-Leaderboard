@@ -30,7 +30,7 @@ export default function processor(activities) {
 }
 
 /**
- * Return just new users based on passed activities
+ * Return just new users based on giving activities
  * It compares given users with db and return new instances of User Model from those that was not found
  * @param activities
  * @returns {Promise.<User[]>}
@@ -51,7 +51,7 @@ export async function db_insert_users(activities){
 }
 
 /**
- * Return just new repositories based on passed activities
+ * Return just new repositories based on giving activities
  * It compares given repositories with db and return new instances of Repository Model from those that was not found
  * @param activities
  * @returns {Promise.<Repository[]>}
@@ -81,7 +81,7 @@ export async function db_insert_repositories(activities) {
 }
 
 /**
- * Return just new activities base on passed activities
+ * Return just new activities base on giving activities
  * It compares given activities with db and return new instances of Activity Model from those that was not found
  * @param activities
  * @returns {Promise.<Activity[]>}
