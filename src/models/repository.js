@@ -1,5 +1,5 @@
 const mongoose 		= require('mongoose'),
-    factory 		= require('schemaFactory'),
+    factory 		= require('schema_factory'),
     { Model } 		= mongoose,
 	{ Activity }	= require('activity');
 

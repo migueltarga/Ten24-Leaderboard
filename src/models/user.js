@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'),
     { Model } = mongoose,
-    factory = require('schemaFactory'),
+    factory = require('schema_factory'),
 	{ Activity } = require('activity');
 
 export class User extends Model {

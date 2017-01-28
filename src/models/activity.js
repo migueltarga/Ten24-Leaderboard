@@ -1,6 +1,6 @@
 const mongoose 		= require('mongoose'),
 	{ Model } 		= mongoose,
-	factory 		= require('schemaFactory'),
+	factory 		= require('schema_factory'),
 	{ User } 		= require('user'),
 	{ Repository } 	= require('repository');
 
