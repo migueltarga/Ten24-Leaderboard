@@ -1,0 +1,48 @@
+:host {
+     flex: 1 0 25%;
+     position: relative;
+}
+.card{
+    padding: 10px;
+    border: 5px solid #1b2431;
+    color: white;
+    border-radius: 8px;
+}
+.card .fa {
+    color: white;
+    font-size: 42px;
+    opacity: 0.3;
+    position: absolute;
+    right: 13px;
+    top: 13px;
+}
+.card .stat {
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 14px;
+    margin-top: 5px;
+    padding: 10px 10px 0;
+    text-transform: uppercase;
+}
+.card .title {
+    display: inline-block;
+    font-size: 8px;
+    padding: 10px 10px 0;
+    text-transform: uppercase;
+}
+.card .value {
+    font-size: 40px;
+    font-weight: lighter;
+    padding: 0 10px;
+}
+.card.blue {
+    background-color: #2298F1;
+}
+.card.green {
+    background-color: #66B92E;
+}
+.card.orange {
+    background-color: #DA932C;
+}
+.card.red {
+    background-color: #D65B4A;
+}

@@ -1,0 +1,24 @@
+<div class="box">
+  <div class="box-inner">
+    <header class="box-header">
+      <div class="title">Latest Activities</div>
+      <div class="count">| last 5</div>
+    </header>
+    <table class="activity-table">
+      <tr>
+        <th class="table-head">Project</th>
+        <th class="table-head">From</th>
+        <th class="table-head">Points</th>
+        <th class="table-head">Type</th>
+        <th class="table-head">Description</th>
+      </tr>
+      <tr class="danger-item" *ngFor="let activity of activities">
+        <td>{{activity.project}}</td>
+        <td>{{activity.member}}</td>
+        <td>{{activity.points}}</td>
+        <td>{{activity.type}}</td>
+        <td>{{activity.description}}</td>
+      </tr>
+    </table>
+  </div>
+</div>

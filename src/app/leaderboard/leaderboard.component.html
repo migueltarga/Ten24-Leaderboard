@@ -1,0 +1,19 @@
+<div class="box">
+  <div class="box-inner">
+    <header class="box-header">
+      <div class="title">Leaderboard</div>
+      <div class="count">| {{members.length}} Members</div>
+    </header>
+    <div class="box-content">
+      <div class="member" *ngFor="let member of members">
+        <img [src]="member.picture" class="avatar"/>
+        <div class="member-info">
+          <p>
+            <span>{{member.name}}</span>
+          </p>
+          <p>{{member.points}} Points</p>
+        </div>
+      </div>   
+    </div>
+  </div>
+</div>

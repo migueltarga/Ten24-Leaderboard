@@ -1,0 +1,28 @@
+.box-content .member{
+    margin:10px 0 0 10px;
+    flex-grow: 1;
+    height:100px;    
+    width: calc(100% * (1/6) - 10px - 1px);
+    display: flex;
+}
+.box-content .member .avatar + .member-info {
+    margin-left: 7px;
+}
+
+.box-content .member img.avatar {
+    float: left;
+    border-radius: 50%;
+    height: 50px;
+    width: 50px;
+}
+
+.box-content .member p {
+    color: white;
+    font-size: 16px;
+    font-weight: 100;
+}
+.box-content .member p:last-of-type {
+    color: #738297;
+    font-size: 15px;
+    font-weight: 400;
+}

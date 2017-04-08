@@ -1,0 +1,11 @@
+.card-list {
+    width: 100%;
+}
+.card-list:before,
+.card-list:after {
+    content: " ";
+    display: table;
+}
+.card-list:after {
+    clear: both;
+}

@@ -1,1 +1,68 @@
 /* You can add global styles to this file, and also import other style files */
+body {
+    background-color: #1b2431;
+    color: #202020;
+    font-family: "Helvetica", "Open Sans", "Arial";
+    font-size: 13px;
+}
+p,
+figure,
+ul,
+li {
+    margin: 0;
+    padding: 0;
+}
+
+.link {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+}
+.link img {
+    width: 100%;
+}
+
+#container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.box {
+    background-color: #273142;
+    margin-top: 10px;
+}
+.box-inner {
+    border: 1px solid #313D4F;
+    border-radius: 4px;
+}
+.box-header {
+    color: white;
+    padding: 8px;
+}
+.box-header .count,
+.box-header .title {
+    display: inline-block;
+}
+.box-header .count {
+    color: #738297;
+}
+.box-header .fa {
+    cursor: pointer;
+    float: right;
+    font-size: 16px;
+    margin: 5px 0;
+}
+.box-header .title {
+    font-size: 21px;
+    font-weight: lighter;
+}
+.box-header .title + .count {
+    margin-left: 5px;
+}
+.box-content {
+     display: flex;
+    font-size: 0;
+    flex-wrap:wrap;
+    margin:-10px 0 0 -10px;
+}
